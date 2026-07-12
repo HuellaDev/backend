@@ -1,5 +1,10 @@
-const express = require('express');
-const cors = require('cors');
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import http from "http";
+
+import testRoutes from "../routers/test.routes.js";
+
 // const fileUpload = require('express-fileupload')
 
 
@@ -10,16 +15,22 @@ class Server {
     constructor() {
         this.app = express();
         this.port = process.env.PORT;
-        this.server = require('http').createServer(this.app);
-        // this.io = require('socket.io')(this.server);
         
+        this.server = http.createServer(this.app)
+        // this.io = require('socket.io')(this.server);
 
-        this.paths = {}
+
+        this.pathOwner = '/api/huella';
+        this.paths = {
+            test: `${this.pathOwner}/test`,
+
+
+        }
 
 
 
         // Connectar a base de datos
-    
+
 
         // Middlewares
         this.middlewares();
@@ -30,10 +41,16 @@ class Server {
         this.routes();
         //Sockets
         // this.sockets();
-        
+
     }
     async conectarDB() {
-        await dbConnection();
+       
+        try {
+            await dbConnection(); 
+        } catch (error) {
+            console.error('We cannot connect with the DB')
+            
+        }
     }
 
     middlewares() {
@@ -54,8 +71,10 @@ class Server {
         //     createParentPath: true
         // }));
     }
-    
+
     routes() {
+        this.app.use(this.paths.test, testRoutes);
+
 
     }
     // sockets(){
@@ -64,8 +83,8 @@ class Server {
 
 
     listen() {
-        this.server.listen( this.port, () => {
-            console.log('Servidor corriendo en puerto', this.port );
+        this.server.listen(this.port, () => {
+            console.log('Servidor corriendo en puerto', this.port);
         });
     }
 
@@ -74,4 +93,4 @@ class Server {
 
 
 
-module.exports = Server;
+export default Server;
