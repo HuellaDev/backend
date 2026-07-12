@@ -1,20 +1,36 @@
-import pool from "../db/config.js";
+import {
+  Profile,
+  LostReport,
+  SightingReport,
+  AiMatch,
+  Photo,
+} from "../models/index.js";
 
 export const testDB = async (req, res) => {
-   let client;
   try {
-    // Adquiere una conexión del pool
-    client = await pool.connect();
-    
-    // Ejecuta tu consulta
-    const result = await client.query('SELECT * FROM comments');
-    
-    res.json(result.rows);
+    const lostReports = await LostReport.findAll({
+      include: [
+        { model: Profile, as: "user" },
+        { model: Photo },
+      ],
+    });
+
+    res.json(lostReports);
   } catch (err) {
-    console.error('Error en la consulta', err);
-    res.status(500).send('Error interno del servidor');
-  } finally {
-    // IMPORTANTE: Libera la conexión de vuelta al pool
-    if (client) client.release();
+    console.error("Error en la consulta", err);
+    res.status(500).send("Error interno del servidor");
+  }
+};
+
+export const testMatches = async (req, res) => {
+  try {
+    const matches = await AiMatch.findAll({
+      include: [{ model: LostReport }, { model: SightingReport }],
+    });
+
+    res.json(matches);
+  } catch (err) {
+    console.error("Error en la consulta", err);
+    res.status(500).send("Error interno del servidor");
   }
 };
