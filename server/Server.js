@@ -3,7 +3,11 @@ import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
 
+
+
+//Routes
 import testRoutes from "../routers/test.routes.js";
+import profileRoutes from "../routers/profile.routes.js";
 
 // const fileUpload = require('express-fileupload')
 
@@ -23,6 +27,7 @@ class Server {
         this.pathOwner = '/api/huella';
         this.paths = {
             test: `${this.pathOwner}/test`,
+            profile: `${this.pathOwner}/profile`,
 
 
         }
@@ -74,6 +79,7 @@ class Server {
 
     routes() {
         this.app.use(this.paths.test, testRoutes);
+        this.app.use(this.paths.profile, profileRoutes);
 
 
     }
