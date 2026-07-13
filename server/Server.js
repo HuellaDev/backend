@@ -8,6 +8,8 @@ import http from "http";
 //Routes
 import testRoutes from "../routers/test.routes.js";
 import profileRoutes from "../routers/profile.routes.js";
+import lostReportRoutes from "../routers/lostReport.routes.js";
+import sightingReportRoutes from "../routers/sightingReport.routes.js";
 
 // const fileUpload = require('express-fileupload')
 
@@ -19,7 +21,7 @@ class Server {
     constructor() {
         this.app = express();
         this.port = process.env.PORT;
-        
+
         this.server = http.createServer(this.app)
         // this.io = require('socket.io')(this.server);
 
@@ -28,6 +30,8 @@ class Server {
         this.paths = {
             test: `${this.pathOwner}/test`,
             profile: `${this.pathOwner}/profile`,
+            lostReports: `${this.pathOwner}/lost-reports`,
+            sightingReports: `${this.pathOwner}/sighting-reports`,
 
 
         }
@@ -49,12 +53,12 @@ class Server {
 
     }
     async conectarDB() {
-       
+
         try {
-            await dbConnection(); 
+            await dbConnection();
         } catch (error) {
             console.error('We cannot connect with the DB')
-            
+
         }
     }
 
@@ -80,6 +84,8 @@ class Server {
     routes() {
         this.app.use(this.paths.test, testRoutes);
         this.app.use(this.paths.profile, profileRoutes);
+        this.app.use(this.paths.lostReports, lostReportRoutes);
+        this.app.use(this.paths.sightingReports, sightingReportRoutes);
 
 
     }
