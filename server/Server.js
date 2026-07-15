@@ -5,7 +5,7 @@ import http from "http";
 import helmet from "helmet";
 
 
-
+import { notFoundHandler, errorHandler } from "../middlewares/error.middleware.js";
 //Routes
 
 import profileRoutes from "../routers/profile.routes.js";
@@ -33,7 +33,7 @@ class Server {
 
         this.pathOwner = '/api/huella';
         this.paths = {
-            
+
             profile: `${this.pathOwner}/profile`,
             lostReports: `${this.pathOwner}/lost-reports`,
             sightingReports: `${this.pathOwner}/sighting-reports`,
@@ -84,10 +84,12 @@ class Server {
         // Public Directory 
         this.app.use(express.static('public'));
 
-        
-       
-        
-        
+
+    
+
+
+
+
 
 
         // Fileupload - Carga de archivo
@@ -99,7 +101,7 @@ class Server {
     }
 
     routes() {
-      
+
         this.app.use(this.paths.profile, profileRoutes);
         this.app.use(this.paths.lostReports, lostReportRoutes);
         this.app.use(this.paths.sightingReports, sightingReportRoutes);
@@ -107,6 +109,9 @@ class Server {
         this.app.use(this.paths.comments, commentRoutes);
         this.app.use(this.paths.notifications, notificationRoutes);
         this.app.use(this.paths.organizations, organizationRoutes);
+
+            this.app.use(notFoundHandler);
+        this.app.use(errorHandler);
 
 
     }

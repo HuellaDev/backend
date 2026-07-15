@@ -1,6 +1,8 @@
 import { sequelize, SightingReport, AnimalProfile, Profile, Photo } from "../models/index.js";
+import { catchAsync } from "../helpers/catchAsync.js";
+import { AppError } from "../helpers/AppError.js";
 
-export const createSightingReport = async (req, res) => {
+export const createSightingReport = catchAsync(async (req, res) => {
   const {
     anonymous,
     location,
@@ -18,7 +20,7 @@ export const createSightingReport = async (req, res) => {
   } = req.body;
 
   if (!species) {
-    return res.status(400).json({ error: "species is required" });
+    throw new AppError("species is required", 400);
   }
 
   const t = await sequelize.transaction();
@@ -57,102 +59,81 @@ export const createSightingReport = async (req, res) => {
     res.status(201).json({ sightingReport, animalProfile });
   } catch (err) {
     await t.rollback();
-    console.error("Error creating sighting report", err);
-    res.status(500).json({ error: "Could not create sighting report" });
+    throw err;
   }
-};
+});
 
-export const getSightingReports = async (req, res) => {
+export const getSightingReports = catchAsync(async (req, res) => {
   const { status } = req.query;
 
   const where = {};
   if (status) where.status = status;
 
-  try {
-    const sightingReports = await SightingReport.findAll({
-      where,
-      include: [
-        { model: AnimalProfile },
-        { model: Profile, as: "user", attributes: ["id", "full_name", "profile_photo"] },
-        { model: Photo },
-      ],
-      order: [["created_at", "DESC"]],
-    });
+  const sightingReports = await SightingReport.findAll({
+    where,
+    include: [
+      { model: AnimalProfile },
+      { model: Profile, as: "user", attributes: ["id", "full_name", "profile_photo"] },
+      { model: Photo },
+    ],
+    order: [["created_at", "DESC"]],
+  });
 
-    res.json(sightingReports);
-  } catch (err) {
-    console.error("Error fetching sighting reports", err);
-    res.status(500).json({ error: "Could not fetch sighting reports" });
+  res.json(sightingReports);
+});
+
+export const getSightingReportById = catchAsync(async (req, res) => {
+  const sightingReport = await SightingReport.findByPk(req.params.id, {
+    include: [
+      { model: AnimalProfile },
+      { model: Profile, as: "user", attributes: ["id", "full_name", "profile_photo"] },
+      { model: Photo },
+    ],
+  });
+
+  if (!sightingReport) {
+    throw new AppError("Sighting report not found", 404);
   }
-};
 
-export const getSightingReportById = async (req, res) => {
-  try {
-    const sightingReport = await SightingReport.findByPk(req.params.id, {
-      include: [
-        { model: AnimalProfile },
-        { model: Profile, as: "user", attributes: ["id", "full_name", "profile_photo"] },
-        { model: Photo },
-      ],
-    });
+  res.json(sightingReport);
+});
 
-    if (!sightingReport) {
-      return res.status(404).json({ error: "Sighting report not found" });
-    }
-
-    res.json(sightingReport);
-  } catch (err) {
-    console.error("Error fetching sighting report", err);
-    res.status(500).json({ error: "Could not fetch sighting report" });
-  }
-};
-
-export const updateSightingReportStatus = async (req, res) => {
+export const updateSightingReportStatus = catchAsync(async (req, res) => {
   const { status } = req.body;
 
   const validStatuses = ["active", "resolved", "cancelled"];
   if (!validStatuses.includes(status)) {
-    return res.status(400).json({ error: `status must be one of: ${validStatuses.join(", ")}` });
+    throw new AppError(`status must be one of: ${validStatuses.join(", ")}`, 400);
   }
 
-  try {
-    const sightingReport = await SightingReport.findByPk(req.params.id);
+  const sightingReport = await SightingReport.findByPk(req.params.id);
 
-    if (!sightingReport) {
-      return res.status(404).json({ error: "Sighting report not found" });
-    }
-
-    if (sightingReport.user_id !== req.user.id) {
-      return res.status(403).json({ error: "You do not own this report" });
-    }
-
-    sightingReport.status = status;
-    await sightingReport.save();
-
-    res.json(sightingReport);
-  } catch (err) {
-    console.error("Error updating sighting report status", err);
-    res.status(500).json({ error: "Could not update sighting report" });
+  if (!sightingReport) {
+    throw new AppError("Sighting report not found", 404);
   }
-};
 
-export const deleteSightingReport = async (req, res) => {
-  try {
-    const sightingReport = await SightingReport.findByPk(req.params.id);
-
-    if (!sightingReport) {
-      return res.status(404).json({ error: "Sighting report not found" });
-    }
-
-    if (sightingReport.user_id !== req.user.id) {
-      return res.status(403).json({ error: "You do not own this report" });
-    }
-
-    await sightingReport.destroy();
-
-    res.json({ message: "Sighting report deleted" });
-  } catch (err) {
-    console.error("Error deleting sighting report", err);
-    res.status(500).json({ error: "Could not delete sighting report" });
+  if (sightingReport.user_id !== req.user.id) {
+    throw new AppError("You do not own this report", 403);
   }
-};
+
+  sightingReport.status = status;
+  await sightingReport.save();
+
+  res.json(sightingReport);
+});
+
+export const deleteSightingReport = catchAsync(async (req, res) => {
+  const sightingReport = await SightingReport.findByPk(req.params.id);
+
+  if (!sightingReport) {
+    throw new AppError("Sighting report not found", 404);
+  }
+
+  if (sightingReport.user_id !== req.user.id) {
+    throw new AppError("You do not own this report", 403);
+  }
+
+  await sightingReport.destroy();
+
+  res.json({ message: "Sighting report deleted" });
+});

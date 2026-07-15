@@ -1,6 +1,8 @@
 import { sequelize, LostReport, AnimalProfile, Profile, Photo } from "../models/index.js";
+import { catchAsync } from "../helpers/catchAsync.js";
+import { AppError } from "../helpers/AppError.js";
 
-export const createLostReport = async (req, res) => {
+export const createLostReport = catchAsync(async (req, res) => {
   const {
     pet_name,
     contact_phone,
@@ -22,7 +24,7 @@ export const createLostReport = async (req, res) => {
   } = req.body;
 
   if (!species) {
-    return res.status(400).json({ error: "species is required" });
+    throw new AppError("species is required", 400);
   }
 
   const t = await sequelize.transaction();
@@ -65,102 +67,81 @@ export const createLostReport = async (req, res) => {
     res.status(201).json({ lostReport, animalProfile });
   } catch (err) {
     await t.rollback();
-    console.error("Error creating lost report", err);
-    res.status(500).json({ error: "Could not create lost report" });
+    throw err;
   }
-};
+});
 
-export const getLostReports = async (req, res) => {
+export const getLostReports = catchAsync(async (req, res) => {
   const { status } = req.query;
 
   const where = {};
   if (status) where.status = status;
 
-  try {
-    const lostReports = await LostReport.findAll({
-      where,
-      include: [
-        { model: AnimalProfile },
-        { model: Profile, as: "user", attributes: ["id", "full_name", "profile_photo"] },
-        { model: Photo },
-      ],
-      order: [["created_at", "DESC"]],
-    });
+  const lostReports = await LostReport.findAll({
+    where,
+    include: [
+      { model: AnimalProfile },
+      { model: Profile, as: "user", attributes: ["id", "full_name", "profile_photo"] },
+      { model: Photo },
+    ],
+    order: [["created_at", "DESC"]],
+  });
 
-    res.json(lostReports);
-  } catch (err) {
-    console.error("Error fetching lost reports", err);
-    res.status(500).json({ error: "Could not fetch lost reports" });
+  res.json(lostReports);
+});
+
+export const getLostReportById = catchAsync(async (req, res) => {
+  const lostReport = await LostReport.findByPk(req.params.id, {
+    include: [
+      { model: AnimalProfile },
+      { model: Profile, as: "user", attributes: ["id", "full_name", "profile_photo"] },
+      { model: Photo },
+    ],
+  });
+
+  if (!lostReport) {
+    throw new AppError("Lost report not found", 404);
   }
-};
 
-export const getLostReportById = async (req, res) => {
-  try {
-    const lostReport = await LostReport.findByPk(req.params.id, {
-      include: [
-        { model: AnimalProfile },
-        { model: Profile, as: "user", attributes: ["id", "full_name", "profile_photo"] },
-        { model: Photo },
-      ],
-    });
+  res.json(lostReport);
+});
 
-    if (!lostReport) {
-      return res.status(404).json({ error: "Lost report not found" });
-    }
-
-    res.json(lostReport);
-  } catch (err) {
-    console.error("Error fetching lost report", err);
-    res.status(500).json({ error: "Could not fetch lost report" });
-  }
-};
-
-export const updateLostReportStatus = async (req, res) => {
+export const updateLostReportStatus = catchAsync(async (req, res) => {
   const { status } = req.body;
 
   const validStatuses = ["active", "resolved", "cancelled"];
   if (!validStatuses.includes(status)) {
-    return res.status(400).json({ error: `status must be one of: ${validStatuses.join(", ")}` });
+    throw new AppError(`status must be one of: ${validStatuses.join(", ")}`, 400);
   }
 
-  try {
-    const lostReport = await LostReport.findByPk(req.params.id);
+  const lostReport = await LostReport.findByPk(req.params.id);
 
-    if (!lostReport) {
-      return res.status(404).json({ error: "Lost report not found" });
-    }
-
-    if (lostReport.user_id !== req.user.id) {
-      return res.status(403).json({ error: "You do not own this report" });
-    }
-
-    lostReport.status = status;
-    await lostReport.save();
-
-    res.json(lostReport);
-  } catch (err) {
-    console.error("Error updating lost report status", err);
-    res.status(500).json({ error: "Could not update lost report" });
+  if (!lostReport) {
+    throw new AppError("Lost report not found", 404);
   }
-};
 
-export const deleteLostReport = async (req, res) => {
-  try {
-    const lostReport = await LostReport.findByPk(req.params.id);
-
-    if (!lostReport) {
-      return res.status(404).json({ error: "Lost report not found" });
-    }
-
-    if (lostReport.user_id !== req.user.id) {
-      return res.status(403).json({ error: "You do not own this report" });
-    }
-
-    await lostReport.destroy();
-
-    res.json({ message: "Lost report deleted" });
-  } catch (err) {
-    console.error("Error deleting lost report", err);
-    res.status(500).json({ error: "Could not delete lost report" });
+  if (lostReport.user_id !== req.user.id) {
+    throw new AppError("You do not own this report", 403);
   }
-};
+
+  lostReport.status = status;
+  await lostReport.save();
+
+  res.json(lostReport);
+});
+
+export const deleteLostReport = catchAsync(async (req, res) => {
+  const lostReport = await LostReport.findByPk(req.params.id);
+
+  if (!lostReport) {
+    throw new AppError("Lost report not found", 404);
+  }
+
+  if (lostReport.user_id !== req.user.id) {
+    throw new AppError("You do not own this report", 403);
+  }
+
+  await lostReport.destroy();
+
+  res.json({ message: "Lost report deleted" });
+});

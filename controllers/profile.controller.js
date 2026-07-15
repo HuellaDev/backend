@@ -1,4 +1,6 @@
-export const getMe = async (req, res) => {
+import { catchAsync } from "../helpers/catchAsync.js";
+
+export const getMe = catchAsync(async (req, res) => {
   res.json({
     authUser: {
       id: req.user.id,
@@ -6,4 +8,4 @@ export const getMe = async (req, res) => {
     },
     profile: req.profile,
   });
-};
+});

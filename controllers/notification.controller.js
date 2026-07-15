@@ -1,58 +1,45 @@
 import { Notification } from "../models/index.js";
+import { catchAsync } from "../helpers/catchAsync.js";
+import { AppError } from "../helpers/AppError.js";
 
-export const getMyNotifications = async (req, res) => {
-  try {
-    const notifications = await Notification.findAll({
-      where: { user_id: req.user.id },
-      order: [["created_at", "DESC"]],
-    });
+export const getMyNotifications = catchAsync(async (req, res) => {
+  const notifications = await Notification.findAll({
+    where: { user_id: req.user.id },
+    order: [["created_at", "DESC"]],
+  });
 
-    res.json(notifications);
-  } catch (err) {
-    console.error("Error fetching notifications", err);
-    res.status(500).json({ error: "Could not fetch notifications" });
+  res.json(notifications);
+});
+
+export const markAsRead = catchAsync(async (req, res) => {
+  const notification = await Notification.findByPk(req.params.id);
+
+  if (!notification) {
+    throw new AppError("Notification not found", 404);
   }
-};
 
-export const markAsRead = async (req, res) => {
-  try {
-    const notification = await Notification.findByPk(req.params.id);
-
-    if (!notification) {
-      return res.status(404).json({ error: "Notification not found" });
-    }
-
-    if (notification.user_id !== req.user.id) {
-      return res.status(403).json({ error: "You do not own this notification" });
-    }
-
-    notification.is_read = true;
-    await notification.save();
-
-    res.json(notification);
-  } catch (err) {
-    console.error("Error updating notification", err);
-    res.status(500).json({ error: "Could not update notification" });
+  if (notification.user_id !== req.user.id) {
+    throw new AppError("You do not own this notification", 403);
   }
-};
 
-export const deleteNotification = async (req, res) => {
-  try {
-    const notification = await Notification.findByPk(req.params.id);
+  notification.is_read = true;
+  await notification.save();
 
-    if (!notification) {
-      return res.status(404).json({ error: "Notification not found" });
-    }
+  res.json(notification);
+});
 
-    if (notification.user_id !== req.user.id) {
-      return res.status(403).json({ error: "You do not own this notification" });
-    }
+export const deleteNotification = catchAsync(async (req, res) => {
+  const notification = await Notification.findByPk(req.params.id);
 
-    await notification.destroy();
-
-    res.json({ message: "Notification deleted" });
-  } catch (err) {
-    console.error("Error deleting notification", err);
-    res.status(500).json({ error: "Could not delete notification" });
+  if (!notification) {
+    throw new AppError("Notification not found", 404);
   }
-};
+
+  if (notification.user_id !== req.user.id) {
+    throw new AppError("You do not own this notification", 403);
+  }
+
+  await notification.destroy();
+
+  res.json({ message: "Notification deleted" });
+});
