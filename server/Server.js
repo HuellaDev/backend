@@ -10,8 +10,8 @@ import testRoutes from "../routers/test.routes.js";
 import profileRoutes from "../routers/profile.routes.js";
 import lostReportRoutes from "../routers/lostReport.routes.js";
 import sightingReportRoutes from "../routers/sightingReport.routes.js";
-
 import photoRoutes from "../routers/photo.routes.js";
+import commentRoutes from "../routers/comment.routes.js";
 
 // const fileUpload = require('express-fileupload')
 
@@ -35,6 +35,7 @@ class Server {
             lostReports: `${this.pathOwner}/lost-reports`,
             sightingReports: `${this.pathOwner}/sighting-reports`,
             photos: `${this.pathOwner}/photos`,
+            comments: `${this.pathOwner}/comments`,
 
 
         }
@@ -90,6 +91,7 @@ class Server {
         this.app.use(this.paths.lostReports, lostReportRoutes);
         this.app.use(this.paths.sightingReports, sightingReportRoutes);
         this.app.use(this.paths.photos, photoRoutes);
+        this.app.use(this.paths.comments, commentRoutes);
 
 
     }
