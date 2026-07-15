@@ -12,8 +12,8 @@ const router = Router();
 
 router.get("/", getLostReports);
 router.get("/:id", getLostReportById);
-router.post("/", requireAuth, createLostReport);
-router.patch("/:id/status", requireAuth, updateLostReportStatus);
-router.delete("/:id", requireAuth, deleteLostReport);
+router.post("/", [requireAuth], createLostReport);
+router.patch("/:id/status", [requireAuth], updateLostReportStatus);
+router.delete("/:id", [requireAuth], deleteLostReport);
 
 export default router;

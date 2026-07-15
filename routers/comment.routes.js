@@ -5,7 +5,7 @@ import { createComment, getCommentsForReport, deleteComment } from "../controlle
 const router = Router();
 
 router.get("/", getCommentsForReport);
-router.post("/", requireAuth, createComment);
-router.delete("/:id", requireAuth, deleteComment);
+router.post("/", [requireAuth], createComment);
+router.delete("/:id", [requireAuth], deleteComment);
 
 export default router;

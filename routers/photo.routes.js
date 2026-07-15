@@ -5,7 +5,7 @@ import { uploadPhoto, deletePhoto } from "../controllers/photo.controller.js";
 
 const router = Router();
 
-router.post("/", requireAuth, upload.single("file"), uploadPhoto);
-router.delete("/:id", requireAuth, deletePhoto);
+router.post("/", [requireAuth, upload.single("file")], uploadPhoto);
+router.delete("/:id", [requireAuth], deletePhoto);
 
 export default router;

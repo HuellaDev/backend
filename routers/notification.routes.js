@@ -4,8 +4,8 @@ import { getMyNotifications, markAsRead, deleteNotification } from "../controlle
 
 const router = Router();
 
-router.get("/", requireAuth, getMyNotifications);
-router.patch("/:id/read", requireAuth, markAsRead);
-router.delete("/:id", requireAuth, deleteNotification);
+router.get("/", [requireAuth], getMyNotifications);
+router.patch("/:id/read", [requireAuth], markAsRead);
+router.delete("/:id", [requireAuth], deleteNotification);
 
 export default router;

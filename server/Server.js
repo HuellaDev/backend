@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
+import helmet from "helmet";
 
 
 
@@ -13,6 +14,7 @@ import sightingReportRoutes from "../routers/sightingReport.routes.js";
 import photoRoutes from "../routers/photo.routes.js";
 import commentRoutes from "../routers/comment.routes.js";
 import notificationRoutes from "../routers/notification.routes.js";
+import organizationRoutes from "../routers/organization.routes.js";
 
 // const fileUpload = require('express-fileupload')
 
@@ -38,6 +40,7 @@ class Server {
             photos: `${this.pathOwner}/photos`,
             comments: `${this.pathOwner}/comments`,
             notifications: `${this.pathOwner}/notifications`,
+            organizations: `${this.pathOwner}/organizations`,
 
 
         }
@@ -69,14 +72,22 @@ class Server {
     }
 
     middlewares() {
+        // Helmet
+        this.app.use(helmet());
+
         // CORS
         this.app.use(cors());
 
-        // Lectura y parseo del body
+        // Reading and parsing of body
         this.app.use(express.json());
 
-        // Directorio publico
+        // Public Directory 
         this.app.use(express.static('public'));
+
+        
+       
+        
+        
 
 
         // Fileupload - Carga de archivo
@@ -95,6 +106,7 @@ class Server {
         this.app.use(this.paths.photos, photoRoutes);
         this.app.use(this.paths.comments, commentRoutes);
         this.app.use(this.paths.notifications, notificationRoutes);
+        this.app.use(this.paths.organizations, organizationRoutes);
 
 
     }
