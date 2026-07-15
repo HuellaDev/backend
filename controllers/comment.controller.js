@@ -1,4 +1,5 @@
 import { Comment, Profile, LostReport, SightingReport } from "../models/index.js";
+import { createNotification } from "../utils/notification.util.js";
 
 const VALID_REPORT_TYPES = ["lost_report", "sighting_report"];
 
@@ -35,6 +36,15 @@ export const createComment = async (req, res) => {
       photo_url,
       location,
     });
+
+    if (report.user_id !== req.user.id) {
+      await createNotification({
+        user_id: report.user_id,
+        type: "new_comment",
+        title: "New comment on your report",
+        message: comment ? comment.slice(0, 100) : "Someone commented on your report",
+      });
+    }
 
     res.status(201).json(newComment);
   } catch (err) {
