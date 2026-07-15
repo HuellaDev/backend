@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import morgan from "morgan";
 import cors from "cors";
 import http from "http";
 import helmet from "helmet";
@@ -15,6 +16,7 @@ import photoRoutes from "../routers/photo.routes.js";
 import commentRoutes from "../routers/comment.routes.js";
 import notificationRoutes from "../routers/notification.routes.js";
 import organizationRoutes from "../routers/organization.routes.js";
+import healthRoutes from "../routers/health.routes.js";
 
 // const fileUpload = require('express-fileupload')
 
@@ -41,6 +43,7 @@ class Server {
             comments: `${this.pathOwner}/comments`,
             notifications: `${this.pathOwner}/notifications`,
             organizations: `${this.pathOwner}/organizations`,
+            health: `${this.pathOwner}/health`,
 
 
         }
@@ -72,6 +75,9 @@ class Server {
     }
 
     middlewares() {
+        // Morgan
+        this.app.use(morgan("dev"));
+
         // Helmet
         this.app.use(helmet());
 
@@ -85,7 +91,7 @@ class Server {
         this.app.use(express.static('public'));
 
 
-    
+
 
 
 
@@ -109,8 +115,9 @@ class Server {
         this.app.use(this.paths.comments, commentRoutes);
         this.app.use(this.paths.notifications, notificationRoutes);
         this.app.use(this.paths.organizations, organizationRoutes);
+        this.app.use(this.paths.health, healthRoutes);
 
-            this.app.use(notFoundHandler);
+        this.app.use(notFoundHandler);
         this.app.use(errorHandler);
 
 
