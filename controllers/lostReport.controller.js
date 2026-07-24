@@ -90,6 +90,20 @@ export const getLostReports = catchAsync(async (req, res) => {
   res.json(lostReports);
 });
 
+export const getMyLostReports = catchAsync(async (req, res) => {
+  const lostReports = await LostReport.findAll({
+    where: { user_id: req.user.id },
+    include: [
+      { model: AnimalProfile },
+      { model: Profile, as: "user", attributes: ["id", "full_name", "profile_photo"] },
+      { model: Photo },
+    ],
+    order: [["created_at", "DESC"]],
+  });
+
+  res.json(lostReports);
+});
+
 export const getLostReportById = catchAsync(async (req, res) => {
   const lostReport = await LostReport.findByPk(req.params.id, {
     include: [

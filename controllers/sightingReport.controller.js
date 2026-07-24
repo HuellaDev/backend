@@ -82,6 +82,20 @@ export const getSightingReports = catchAsync(async (req, res) => {
   res.json(sightingReports);
 });
 
+export const getMySightingReports = catchAsync(async (req, res) => {
+  const sightingReports = await SightingReport.findAll({
+    where: { user_id: req.user.id },
+    include: [
+      { model: AnimalProfile },
+      { model: Profile, as: "user", attributes: ["id", "full_name", "profile_photo"] },
+      { model: Photo },
+    ],
+    order: [["created_at", "DESC"]],
+  });
+
+  res.json(sightingReports);
+});
+
 export const getSightingReportById = catchAsync(async (req, res) => {
   const sightingReport = await SightingReport.findByPk(req.params.id, {
     include: [

@@ -3,6 +3,7 @@ import { requireAuth } from "../middlewares/auth.middleware.js";
 import {
   createSightingReport,
   getSightingReports,
+  getMySightingReports,
   getSightingReportById,
   updateSightingReportStatus,
   deleteSightingReport,
@@ -11,6 +12,7 @@ import {
 const router = Router();
 
 router.get("/", getSightingReports);
+router.get("/mine", [requireAuth], getMySightingReports);
 router.get("/:id", getSightingReportById);
 router.post("/", [requireAuth], createSightingReport);
 router.patch("/:id/status", [requireAuth], updateSightingReportStatus);
