@@ -1,4 +1,4 @@
-import { Organization, Profile } from "../models/index.js";
+import { Organization, Profile, Photo } from "../models/index.js";
 import { catchAsync } from "../helpers/catchAsync.js";
 import { AppError } from "../helpers/AppError.js";
 
@@ -37,7 +37,7 @@ export const getOrganizations = catchAsync(async (req, res) => {
 
   const organizations = await Organization.findAll({
     where,
-    include: [{ model: Profile, attributes: ["id", "full_name", "profile_photo"] }],
+    include: [{ model: Profile, attributes: ["id", "full_name", "profile_photo"] }, { model: Photo }],
     order: [["created_at", "DESC"]],
   });
 
@@ -46,7 +46,7 @@ export const getOrganizations = catchAsync(async (req, res) => {
 
 export const getOrganizationById = catchAsync(async (req, res) => {
   const organization = await Organization.findByPk(req.params.id, {
-    include: [{ model: Profile, attributes: ["id", "full_name", "profile_photo"] }],
+    include: [{ model: Profile, attributes: ["id", "full_name", "profile_photo"] }, { model: Photo }],
   });
 
   if (!organization) {
