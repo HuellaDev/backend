@@ -23,6 +23,7 @@ export default (sequelize) =>
         type: DataTypes.STRING,
         allowNull: false,
       },
+      location: DataTypes.GEOMETRY("POINT", 4326),
       verified: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,

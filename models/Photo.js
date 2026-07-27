@@ -11,6 +11,7 @@ export default (sequelize) =>
       },
       lost_report_id: DataTypes.UUID,
       sighting_report_id: DataTypes.UUID,
+      organization_id: DataTypes.UUID,
       uploaded_by: {
         type: DataTypes.UUID,
         allowNull: false,

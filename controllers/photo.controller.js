@@ -1,37 +1,49 @@
 import { randomUUID } from "crypto";
 import supabase from "../db/supabaseClient.js";
-import { Photo, LostReport, SightingReport } from "../models/index.js";
+import { Photo, LostReport, SightingReport, Organization } from "../models/index.js";
 import { catchAsync } from "../helpers/catchAsync.js";
 import { AppError } from "../helpers/AppError.js";
 
 const BUCKET = "photos";
 
 export const uploadPhoto = catchAsync(async (req, res) => {
-  const { lost_report_id, sighting_report_id, is_primary } = req.body;
+  const { lost_report_id, sighting_report_id, organization_id, is_primary } = req.body;
 
   if (!req.file) {
     throw new AppError("No file provided", 400);
   }
 
-  if (!lost_report_id && !sighting_report_id) {
-    throw new AppError("lost_report_id or sighting_report_id is required", 400);
+  const targets = [lost_report_id, sighting_report_id, organization_id].filter(Boolean);
+
+  if (targets.length === 0) {
+    throw new AppError(
+      "lost_report_id, sighting_report_id or organization_id is required",
+      400
+    );
   }
 
-  if (lost_report_id && sighting_report_id) {
-    throw new AppError("Provide only one of lost_report_id or sighting_report_id", 400);
+  if (targets.length > 1) {
+    throw new AppError(
+      "Provide only one of lost_report_id, sighting_report_id or organization_id",
+      400
+    );
   }
 
   if (lost_report_id) {
     const lostReport = await LostReport.findByPk(lost_report_id);
-    if (!lostReport) {
-      throw new AppError("Lost report not found", 404);
-    }
+    if (!lostReport) throw new AppError("Lost report not found", 404);
   }
 
   if (sighting_report_id) {
     const sightingReport = await SightingReport.findByPk(sighting_report_id);
-    if (!sightingReport) {
-      throw new AppError("Sighting report not found", 404);
+    if (!sightingReport) throw new AppError("Sighting report not found", 404);
+  }
+
+  if (organization_id) {
+    const organization = await Organization.findByPk(organization_id);
+    if (!organization) throw new AppError("Organization not found", 404);
+    if (organization.user_id !== req.user.id) {
+      throw new AppError("You do not own this organization", 403);
     }
   }
 
@@ -40,9 +52,7 @@ export const uploadPhoto = catchAsync(async (req, res) => {
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(fileName, req.file.buffer, {
-      contentType: req.file.mimetype,
-    });
+    .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
 
   if (uploadError) {
     console.error("Error uploading to Supabase Storage", uploadError);
@@ -54,11 +64,10 @@ export const uploadPhoto = catchAsync(async (req, res) => {
   const photo = await Photo.create({
     lost_report_id: lost_report_id || null,
     sighting_report_id: sighting_report_id || null,
+    organization_id: organization_id || null,
     uploaded_by: req.user.id,
     url: publicUrlData.publicUrl,
     is_primary: is_primary === "true" || is_primary === true,
-    width: null,
-    height: null,
     file_size: req.file.size,
     mime_type: req.file.mimetype,
   });

@@ -27,6 +27,9 @@ const StatusHistory = StatusHistoryFactory(sequelize);
 Profile.hasOne(Organization, { foreignKey: "user_id" });
 Organization.belongsTo(Profile, { foreignKey: "user_id" });
 
+Organization.hasMany(Photo, { foreignKey: "organization_id" });
+Photo.belongsTo(Organization, { foreignKey: "organization_id" });
+
 Profile.hasMany(LostReport, { foreignKey: "user_id" });
 LostReport.belongsTo(Profile, { foreignKey: "user_id", as: "user" });
 

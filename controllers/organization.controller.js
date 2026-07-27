@@ -3,7 +3,7 @@ import { catchAsync } from "../helpers/catchAsync.js";
 import { AppError } from "../helpers/AppError.js";
 
 export const createOrganization = catchAsync(async (req, res) => {
-  const { name, address, phone, type } = req.body;
+  const { name, address, phone, type, location } = req.body;
 
   if (!name || !type) {
     throw new AppError("name and type are required", 400);
@@ -21,6 +21,7 @@ export const createOrganization = catchAsync(async (req, res) => {
     address,
     phone,
     type,
+    location,
     verified: false,
   });
 
@@ -56,7 +57,7 @@ export const getOrganizationById = catchAsync(async (req, res) => {
 });
 
 export const updateOrganization = catchAsync(async (req, res) => {
-  const { name, address, phone, type } = req.body;
+  const { name, address, phone, type, location } = req.body;
 
   const organization = await Organization.findByPk(req.params.id);
 
@@ -72,6 +73,7 @@ export const updateOrganization = catchAsync(async (req, res) => {
   if (address !== undefined) organization.address = address;
   if (phone !== undefined) organization.phone = phone;
   if (type !== undefined) organization.type = type;
+  if (location !== undefined) organization.location = location;
 
   await organization.save();
 
