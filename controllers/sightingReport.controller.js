@@ -1,6 +1,7 @@
 import { sequelize, SightingReport, AnimalProfile, Profile, Photo } from "../models/index.js";
 import { catchAsync } from "../helpers/catchAsync.js";
 import { AppError } from "../helpers/AppError.js";
+import { Op } from "sequelize";
 
 export const createSightingReport = catchAsync(async (req, res) => {
   const {
@@ -64,10 +65,17 @@ export const createSightingReport = catchAsync(async (req, res) => {
 });
 
 export const getSightingReports = catchAsync(async (req, res) => {
-  const { status } = req.query;
+  const { status, as_of } = req.query;
 
   const where = {};
-  if (status) where.status = status;
+
+  if (as_of) {
+    const asOfDate = new Date(as_of);
+    where.created_at = { [Op.lte]: asOfDate };
+    where[Op.or] = [{ status: "active" }, { updated_at: { [Op.gt]: asOfDate } }];
+  } else if (status) {
+    where.status = status;
+  }
 
   const sightingReports = await SightingReport.findAll({
     where,
