@@ -17,6 +17,8 @@ import commentRoutes from "../routers/comment.routes.js";
 import notificationRoutes from "../routers/notification.routes.js";
 import organizationRoutes from "../routers/organization.routes.js";
 import healthRoutes from "../routers/health.routes.js";
+import pushRoutes from "../routers/push.routes.js";
+
 
 // const fileUpload = require('express-fileupload')
 
@@ -44,6 +46,7 @@ class Server {
             notifications: `${this.pathOwner}/notifications`,
             organizations: `${this.pathOwner}/organizations`,
             health: `${this.pathOwner}/health`,
+            push: `${this.pathOwner}/push`,
 
 
         }
@@ -119,6 +122,8 @@ class Server {
 
         this.app.use(notFoundHandler);
         this.app.use(errorHandler);
+
+        this.app.use(this.paths.push, pushRoutes);
 
 
     }

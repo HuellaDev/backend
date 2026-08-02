@@ -11,6 +11,7 @@ import AiMatchFactory from "./AiMatch.js";
 import CommentFactory from "./Comment.js";
 import NotificationFactory from "./Notification.js";
 import StatusHistoryFactory from "./StatusHistory.js";
+import PushSubscriptionFactory from "./PushSubscription.js";
 
 const Profile = ProfileFactory(sequelize);
 const Organization = OrganizationFactory(sequelize);
@@ -23,6 +24,7 @@ const AiMatch = AiMatchFactory(sequelize);
 const Comment = CommentFactory(sequelize);
 const Notification = NotificationFactory(sequelize);
 const StatusHistory = StatusHistoryFactory(sequelize);
+const PushSubscription = PushSubscriptionFactory(sequelize);
 
 Profile.hasOne(Organization, { foreignKey: "user_id" });
 Organization.belongsTo(Profile, { foreignKey: "user_id" });
@@ -72,6 +74,10 @@ AiMatch.belongsTo(LostReport, { foreignKey: "lost_report_id" });
 SightingReport.hasMany(AiMatch, { foreignKey: "sighting_report_id" });
 AiMatch.belongsTo(SightingReport, { foreignKey: "sighting_report_id" });
 
+Profile.hasMany(PushSubscription, { foreignKey: "user_id" });
+PushSubscription.belongsTo(Profile, { foreignKey: "user_id" });
+
+
 export {
   sequelize,
   Profile,
@@ -85,4 +91,5 @@ export {
   Comment,
   Notification,
   StatusHistory,
+  PushSubscription,
 };
