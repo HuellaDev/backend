@@ -119,11 +119,12 @@ class Server {
         this.app.use(this.paths.notifications, notificationRoutes);
         this.app.use(this.paths.organizations, organizationRoutes);
         this.app.use(this.paths.health, healthRoutes);
+        this.app.use(this.paths.push, pushRoutes);
 
         this.app.use(notFoundHandler);
         this.app.use(errorHandler);
 
-        this.app.use(this.paths.push, pushRoutes);
+        
 
 
     }
