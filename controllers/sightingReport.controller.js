@@ -71,8 +71,29 @@ export const getSightingReports = catchAsync(async (req, res) => {
 
   if (as_of) {
     const asOfDate = new Date(as_of);
-    where.created_at = { [Op.lte]: asOfDate };
-    where[Op.or] = [{ status: "active" }, { updated_at: { [Op.gt]: asOfDate } }];
+
+    if (Number.isNaN(asOfDate.getTime())) {
+      throw new AppError("Invalid as_of date.", 400);
+    }
+
+    where.created_at = {
+      [Op.lte]: asOfDate,
+    };
+
+    where[Op.and] = [
+      {
+        [Op.or]: [
+          { resolved_at: { [Op.is]: null } },
+          { resolved_at: { [Op.gt]: asOfDate } },
+        ],
+      },
+      {
+        [Op.or]: [
+          { expired_at: { [Op.is]: null } },
+          { expired_at: { [Op.gt]: asOfDate } },
+        ],
+      },
+    ];
   } else if (status) {
     where.status = status;
   }
@@ -81,7 +102,11 @@ export const getSightingReports = catchAsync(async (req, res) => {
     where,
     include: [
       { model: AnimalProfile },
-      { model: Profile, as: "user", attributes: ["id", "full_name", "profile_photo"] },
+      {
+        model: Profile,
+        as: "user",
+        attributes: ["id", "full_name", "profile_photo"],
+      },
       { model: Photo },
     ],
     order: [["created_at", "DESC"]],
@@ -123,9 +148,17 @@ export const getSightingReportById = catchAsync(async (req, res) => {
 export const updateSightingReportStatus = catchAsync(async (req, res) => {
   const { status } = req.body;
 
-  const validStatuses = ["active", "resolved", "cancelled"];
+  const validStatuses = [
+    "active",
+    "resolved",
+    "expired",
+  ];
+
   if (!validStatuses.includes(status)) {
-    throw new AppError(`status must be one of: ${validStatuses.join(", ")}`, 400);
+    throw new AppError(
+      `status must be one of: ${validStatuses.join(", ")}`,
+      400
+    );
   }
 
   const sightingReport = await SightingReport.findByPk(req.params.id);
@@ -138,7 +171,33 @@ export const updateSightingReportStatus = catchAsync(async (req, res) => {
     throw new AppError("You do not own this report", 403);
   }
 
+  if (sightingReport.status !== "active") {
+    throw new AppError(
+      "This report has already been closed.",
+      400
+    );
+  }
+
   sightingReport.status = status;
+  sightingReport.status_changed_at = new Date();
+
+  switch (status) {
+    case "active":
+      sightingReport.resolved_at = null;
+      sightingReport.expired_at = null;
+      break;
+
+    case "resolved":
+      sightingReport.resolved_at = new Date();
+      sightingReport.expired_at = null;
+      break;
+
+    case "expired":
+      sightingReport.expired_at = new Date();
+      sightingReport.resolved_at = null;
+      break;
+  }
+
   await sightingReport.save();
 
   res.json(sightingReport);

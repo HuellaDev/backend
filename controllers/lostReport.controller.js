@@ -74,17 +74,38 @@ export const createLostReport = catchAsync(async (req, res) => {
 
 export const getLostReports = catchAsync(async (req, res) => {
   const { status, as_of } = req.query;
- 
+
   const where = {};
- 
+
   if (as_of) {
     const asOfDate = new Date(as_of);
-    where.created_at = { [Op.lte]: asOfDate };
-    where[Op.or] = [{ status: "active" }, { updated_at: { [Op.gt]: asOfDate } }];
+
+    if (Number.isNaN(asOfDate.getTime())) {
+      throw new AppError("Invalid as_of date.", 400);
+    }
+
+    where.created_at = {
+      [Op.lte]: asOfDate,
+    };
+
+    where[Op.and] = [
+      {
+        [Op.or]: [
+          { resolved_at: { [Op.is]: null, } },
+          { resolved_at: { [Op.gt]: asOfDate } },
+        ],
+      },
+      {
+        [Op.or]: [
+          { expired_at: { [Op.is]: null, } },
+          { expired_at: { [Op.gt]: asOfDate } },
+        ],
+      },
+    ];
   } else if (status) {
     where.status = status;
   }
- 
+
   const lostReports = await LostReport.findAll({
     where,
     include: [
@@ -94,7 +115,7 @@ export const getLostReports = catchAsync(async (req, res) => {
     ],
     order: [["created_at", "DESC"]],
   });
- 
+
   res.json(lostReports);
 });
 
@@ -131,7 +152,12 @@ export const getLostReportById = catchAsync(async (req, res) => {
 export const updateLostReportStatus = catchAsync(async (req, res) => {
   const { status } = req.body;
 
-  const validStatuses = ["active", "resolved", "cancelled"];
+  const validStatuses = [
+    "active",
+    "resolved",
+    "expired",
+
+  ];
   if (!validStatuses.includes(status)) {
     throw new AppError(`status must be one of: ${validStatuses.join(", ")}`, 400);
   }
@@ -145,8 +171,34 @@ export const updateLostReportStatus = catchAsync(async (req, res) => {
   if (lostReport.user_id !== req.user.id) {
     throw new AppError("You do not own this report", 403);
   }
+  if (lostReport.status !== "active") {
+    throw new AppError(
+      "This report has already been closed.",
+      400
+    );
+  }
 
   lostReport.status = status;
+  lostReport.status_changed_at = new Date();
+
+
+  switch (status) {
+    case "active":
+      lostReport.resolved_at = null;
+      lostReport.expired_at = null;
+      break;
+
+    case "resolved":
+      lostReport.resolved_at = new Date();
+      lostReport.expired_at = null;
+      break;
+
+    case "expired":
+      lostReport.expired_at = new Date();
+      lostReport.resolved_at = null;
+      break;
+  }
+
   await lostReport.save();
 
   res.json(lostReport);
