@@ -9,7 +9,11 @@ export const createOrganization = catchAsync(async (req, res) => {
     throw new AppError("name and type are required", 400);
   }
 
-  const existing = await Organization.findOne({ where: { user_id: req.user.id } });
+  const existing = await Organization.findOne({
+    where: {
+      user_id: req.user.id,
+    },
+  });
 
   if (existing) {
     throw new AppError("This user already has an organization", 409);
@@ -23,6 +27,7 @@ export const createOrganization = catchAsync(async (req, res) => {
     type,
     location,
     verified: false,
+    verification_status: "pending",
   });
 
   res.status(201).json(organization);
@@ -32,12 +37,24 @@ export const getOrganizations = catchAsync(async (req, res) => {
   const { type, verified } = req.query;
 
   const where = {};
+
   if (type) where.type = type;
-  if (verified !== undefined) where.verified = verified === "true";
+
+  if (verified !== undefined) {
+    where.verified = verified === "true";
+  }
 
   const organizations = await Organization.findAll({
     where,
-    include: [{ model: Profile, attributes: ["id", "full_name", "profile_photo"] }, { model: Photo }],
+    include: [
+      {
+        model: Profile,
+        attributes: ["id", "full_name", "profile_photo"],
+      },
+      {
+        model: Photo,
+      },
+    ],
     order: [["created_at", "DESC"]],
   });
 
@@ -46,7 +63,15 @@ export const getOrganizations = catchAsync(async (req, res) => {
 
 export const getOrganizationById = catchAsync(async (req, res) => {
   const organization = await Organization.findByPk(req.params.id, {
-    include: [{ model: Profile, attributes: ["id", "full_name", "profile_photo"] }, { model: Photo }],
+    include: [
+      {
+        model: Profile,
+        attributes: ["id", "full_name", "profile_photo"],
+      },
+      {
+        model: Photo,
+      },
+    ],
   });
 
   if (!organization) {
@@ -56,8 +81,54 @@ export const getOrganizationById = catchAsync(async (req, res) => {
   res.json(organization);
 });
 
+export const getMyOrganization = catchAsync(async (req, res) => {
+  const organization = await Organization.findOne({
+    where: {
+      user_id: req.user.id,
+    },
+    include: [
+      {
+        model: Profile,
+        attributes: ["id", "full_name", "profile_photo"],
+      },
+      {
+        model: Photo,
+      },
+    ],
+  });
+
+  res.json(organization);
+});
+
+export const getPendingOrganizations = catchAsync(async (req, res) => {
+  const organizations = await Organization.findAll({
+    where: {
+      verification_status: "pending"
+    },
+    include: [
+      {
+        model: Profile,
+        attributes: ["id", "full_name", "profile_photo"],
+      },
+      {
+        model: Photo,
+      },
+    ],
+    order: [["created_at", "ASC"]],
+  });
+
+  res.json(organizations);
+});
+
 export const updateOrganization = catchAsync(async (req, res) => {
-  const { name, address, phone, type, location } = req.body;
+  const {
+    name,
+    address,
+    phone,
+    type,
+    location,
+    verified,
+  } = req.body;
 
   const organization = await Organization.findByPk(req.params.id);
 
@@ -65,8 +136,11 @@ export const updateOrganization = catchAsync(async (req, res) => {
     throw new AppError("Organization not found", 404);
   }
 
-  if (organization.user_id !== req.user.id) {
-    throw new AppError("You do not own this organization", 403);
+  const isOwner = organization.user_id === req.user.id;
+  const isAdmin = req.profile?.role === "admin";
+
+  if (!isOwner && !isAdmin) {
+    throw new AppError("You do not have permission", 403);
   }
 
   if (name !== undefined) organization.name = name;
@@ -74,6 +148,20 @@ export const updateOrganization = catchAsync(async (req, res) => {
   if (phone !== undefined) organization.phone = phone;
   if (type !== undefined) organization.type = type;
   if (location !== undefined) organization.location = location;
+
+  // Solo los administradores pueden cambiar el estado de verificación
+  if (isAdmin) {
+
+    if (verified !== undefined) {
+      organization.verified = verified;
+    }
+
+    if (req.body.verification_status !== undefined) {
+      organization.verification_status =
+        req.body.verification_status;
+    }
+
+  }
 
   await organization.save();
 
@@ -87,11 +175,16 @@ export const deleteOrganization = catchAsync(async (req, res) => {
     throw new AppError("Organization not found", 404);
   }
 
-  if (organization.user_id !== req.user.id) {
-    throw new AppError("You do not own this organization", 403);
+  const isOwner = organization.user_id === req.user.id;
+  const isAdmin = req.profile?.role === "admin";
+
+  if (!isOwner && !isAdmin) {
+    throw new AppError("You do not have permission", 403);
   }
 
   await organization.destroy();
 
-  res.json({ message: "Organization deleted" });
+  res.json({
+    message: "Organization deleted",
+  });
 });

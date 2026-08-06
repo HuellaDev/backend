@@ -26,10 +26,18 @@ export const attachProfile = catchAsync(async (req, res, next) => {
     throw new AppError("requireAuth must run before attachProfile", 401);
   }
 
-  const profile = await Profile.findByPk(req.user.id);
+  let profile = await Profile.findByPk(req.user.id);
 
   if (!profile) {
-    throw new AppError("Profile not found for this user", 404);
+    profile = await Profile.create({
+      id: req.user.id,
+      full_name:
+        req.user.user_metadata?.full_name ??
+        req.user.email?.split("@")[0] ??
+        "User",
+      role: "user",
+      verified: false,
+    });
   }
 
   req.profile = profile;
