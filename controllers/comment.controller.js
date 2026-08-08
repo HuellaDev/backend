@@ -44,6 +44,7 @@ export const createComment = catchAsync(async (req, res) => {
       type: "new_comment",
       title: "New comment on your report",
       message: comment ? comment.slice(0, 100) : "Someone commented on your report",
+      link_url: `/reports/${report_id}`,
     });
   }
 

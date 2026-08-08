@@ -16,6 +16,10 @@ export default (sequelize) =>
       type: DataTypes.STRING,
       title: DataTypes.STRING,
       message: DataTypes.TEXT,
+      link_url: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       is_read: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,

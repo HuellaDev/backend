@@ -3,7 +3,14 @@ import { catchAsync } from "../helpers/catchAsync.js";
 import { AppError } from "../helpers/AppError.js";
 
 export const createOrganization = catchAsync(async (req, res) => {
-  const { name, address, phone, type, location } = req.body;
+  const {
+    name,
+    address,
+    phone,
+    description,
+    type,
+    location,
+  } = req.body;
 
   if (!name || !type) {
     throw new AppError("name and type are required", 400);
@@ -24,6 +31,7 @@ export const createOrganization = catchAsync(async (req, res) => {
     name,
     address,
     phone,
+    description,
     type,
     location,
     verified: false,
@@ -125,6 +133,7 @@ export const updateOrganization = catchAsync(async (req, res) => {
     name,
     address,
     phone,
+    description,
     type,
     location,
     verified,
@@ -148,8 +157,10 @@ export const updateOrganization = catchAsync(async (req, res) => {
   if (phone !== undefined) organization.phone = phone;
   if (type !== undefined) organization.type = type;
   if (location !== undefined) organization.location = location;
+  if (description !== undefined)
+  organization.description = description;
 
-  // Solo los administradores pueden cambiar el estado de verificación
+  // Only admins can change status
   if (isAdmin) {
 
     if (verified !== undefined) {

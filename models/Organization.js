@@ -9,24 +9,45 @@ export default (sequelize) =>
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
+
       user_id: {
         type: DataTypes.UUID,
         allowNull: false,
       },
+
       name: {
         type: DataTypes.STRING,
         allowNull: false,
       },
+
       address: DataTypes.TEXT,
+
       phone: DataTypes.STRING,
+
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
       type: {
         type: DataTypes.STRING,
         allowNull: false,
       },
+
       location: DataTypes.GEOMETRY("POINT", 4326),
+
       verified: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
+      },
+
+      verification_status: {
+        type: DataTypes.ENUM(
+          "pending",
+          "approved",
+          "rejected"
+        ),
+        defaultValue: "pending",
       },
     },
     {
