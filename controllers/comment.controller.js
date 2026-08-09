@@ -1,4 +1,4 @@
-import { Comment, Profile, LostReport, SightingReport } from "../models/index.js";
+import { Comment, Profile, LostReport, SightingReport, AnimalProfile } from "../models/index.js";
 import { createNotification } from "../helpers/notification.helper.js";
 import { catchAsync } from "../helpers/catchAsync.js";
 import { AppError } from "../helpers/AppError.js";
@@ -6,10 +6,19 @@ import { AppError } from "../helpers/AppError.js";
 const VALID_REPORT_TYPES = ["lost_report", "sighting_report"];
 
 const reportExists = async (report_type, report_id) => {
+  const include = [{ model: AnimalProfile }];
+
   if (report_type === "lost_report") {
-    return await LostReport.findByPk(report_id);
+    return await LostReport.findByPk(report_id, { include });
   }
-  return await SightingReport.findByPk(report_id);
+  return await SightingReport.findByPk(report_id, { include });
+};
+
+const getReportLabel = (report_type, report) => {
+  if (report_type === "lost_report") {
+    return report.pet_name || report.AnimalProfile?.species || "your pet";
+  }
+  return report.AnimalProfile?.species || "an animal";
 };
 
 export const createComment = catchAsync(async (req, res) => {
@@ -39,10 +48,12 @@ export const createComment = catchAsync(async (req, res) => {
   });
 
   if (report.user_id !== req.user.id) {
+    const reportLabel = getReportLabel(report_type, report);
+
     await createNotification({
       user_id: report.user_id,
       type: "new_comment",
-      title: "New comment on your report",
+      title: `New comment on ${reportLabel}'s report`,
       message: comment ? comment.slice(0, 100) : "Someone commented on your report",
       link_url: `/reports/${report_id}`,
     });
