@@ -42,7 +42,7 @@ export const createOrganization = catchAsync(async (req, res) => {
 });
 
 export const getOrganizations = catchAsync(async (req, res) => {
-  const { type, verified } = req.query;
+  const { type, verified, verification_status } = req.query;
 
   const where = {};
 
@@ -50,6 +50,10 @@ export const getOrganizations = catchAsync(async (req, res) => {
 
   if (verified !== undefined) {
     where.verified = verified === "true";
+  }
+
+  if (verification_status) {
+    where.verification_status = verification_status;
   }
 
   const organizations = await Organization.findAll({
