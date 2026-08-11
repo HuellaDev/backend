@@ -85,7 +85,25 @@ class Server {
         this.app.use(helmet());
 
         // CORS
-        this.app.use(cors());
+        const allowedOrigins = (process.env.CORS_ORIGINS ?? "")
+            .split(",")
+            .map((origin) => origin.trim())
+            .filter(Boolean);
+
+        this.app.use(
+            cors({
+                origin: (origin, callback) => {
+                    if (!origin || allowedOrigins.includes(origin)) {
+                        callback(null, true);
+                        return;
+                    }
+
+                    console.warn(`CORS blocked request from origin: ${origin}`);
+                    callback(null, false);
+                },
+                credentials: true,
+            }),
+        );
 
         // Reading and parsing of body
         this.app.use(express.json());
@@ -124,7 +142,7 @@ class Server {
         this.app.use(notFoundHandler);
         this.app.use(errorHandler);
 
-        
+
 
 
     }
