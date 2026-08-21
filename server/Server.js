@@ -79,7 +79,10 @@ class Server {
 
     middlewares() {
         // Morgan
-        this.app.use(morgan("dev"));
+        // Morgan - solo muestra logs en desarrollo
+        if (process.env.NODE_ENV === "development") {
+            this.app.use(morgan("dev"));
+        }
 
         // Helmet
         this.app.use(helmet());
