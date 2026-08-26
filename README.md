@@ -106,4 +106,4 @@ Key tables: `profiles`, `organizations`, `animals`, `animal_profiles`, `lost_rep
 
 ## License
 
-ISC. See [LICENSE](./LICENSE).
+MIT. See [LICENSE](./LICENSE).
