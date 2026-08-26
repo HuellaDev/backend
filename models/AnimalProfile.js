@@ -23,6 +23,7 @@ export default (sequelize) =>
       collar: DataTypes.BOOLEAN,
       condition: DataTypes.STRING,
       description: DataTypes.TEXT,
+      created_by: DataTypes.UUID, 
     },
     {
       tableName: "animal_profiles",
